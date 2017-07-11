@@ -1,5 +1,5 @@
-import * as React from 'react';
-const hoistNonReactStatics = require('hoist-non-react-statics');
+import * as React from "react";
+const hoistNonReactStatics = require("hoist-non-react-statics");
 
 /**
  * Transform Yup ValidationError to a more usable object
@@ -33,7 +33,7 @@ export function validateFormData<T>(data: T, schema: any): Promise<void> {
     if (data.hasOwnProperty(k)) {
       const key = String(k);
       validateData[key] =
-        (data as any)[key] !== '' ? (data as any)[key] : undefined;
+        (data as any)[key] !== "" ? (data as any)[key] : undefined;
     }
   }
   return schema.validate(validateData, { abortEarly: false });
@@ -102,7 +102,7 @@ export interface FormikActions<P, V> {
   /* Reset form */
   resetForm: (nextProps?: P) => void;
   /* Submit form */
-  submitForm: () => void;
+  submitForm: () => Promise<any>;
 }
 
 /**
@@ -141,7 +141,7 @@ export type CompositeComponent<P> =
 export interface ComponentDecorator<TOwnProps, TMergedProps> {
   (component: CompositeComponent<TMergedProps>): React.ComponentClass<
     TOwnProps
-    >;
+  >;
 }
 
 export interface InferableComponentDecorator<TOwnProps> {
@@ -155,7 +155,7 @@ export function Formik<Props, Values extends FormikValues, Payload>({
     for (let k in vanillaProps) {
       if (
         vanillaProps.hasOwnProperty(k) &&
-        typeof vanillaProps[k] !== 'function'
+        typeof vanillaProps[k] !== "function"
       ) {
         values[k] = vanillaProps[k];
       }
@@ -168,19 +168,19 @@ export function Formik<Props, Values extends FormikValues, Payload>({
     return payload;
   },
   validationSchema,
-  handleSubmit,
+  handleSubmit
 }: FormikConfig<Props, Values, Payload>): ComponentDecorator<
   Props,
   InjectedFormikProps<Props, Values>
-  > {
+> {
   return function wrapWithFormik(
     WrappedComponent: CompositeComponent<InjectedFormikProps<Props, Values>>
   ): any {
     class Formik extends React.Component<Props, FormikState<Values>> {
       public static displayName = `Formik(${displayName ||
-      WrappedComponent.displayName ||
-      WrappedComponent.name ||
-      'Component'})`;
+        WrappedComponent.displayName ||
+        WrappedComponent.name ||
+        "Component"})`;
       public static WrappedComponent = WrappedComponent;
       public props: Props;
 
@@ -190,7 +190,7 @@ export function Formik<Props, Values extends FormikValues, Payload>({
           values: mapPropsToValues(props),
           errors: {},
           touched: {},
-          isSubmitting: false,
+          isSubmitting: false
         };
       }
 
@@ -228,8 +228,8 @@ export function Formik<Props, Values extends FormikValues, Payload>({
           ...state,
           values: {
             ...values as object,
-            [field]: val,
-          },
+            [field]: val
+          }
         }));
         // Validate against schema
         validateFormData<Values>(
@@ -238,20 +238,21 @@ export function Formik<Props, Values extends FormikValues, Payload>({
         ).then(
           () => this.setState({ errors: {} }),
           (err: any) => this.setState({ errors: yupToFormErrors(err) })
-          );
+        );
       };
 
       submitForm = () => {
         this.setState({
           touched: touchAllFields(this.state.values),
-          isSubmitting: true,
+          isSubmitting: true
         });
         const { values } = this.state;
         // Validate against schema
-        validateFormData<Values>(values, validationSchema).then(
+        return validateFormData<Values>(values, validationSchema).then(
           () => {
             this.setState({ errors: {} });
-            handleSubmit(mapValuesToPayload(this.state.values), {
+            const result = mapValuesToPayload(this.state.values);
+            handleSubmit(result, {
               setTouched: this.setTouched,
               setErrors: this.setErrors,
               setError: this.setError,
@@ -259,13 +260,18 @@ export function Formik<Props, Values extends FormikValues, Payload>({
               setValues: this.setValues,
               resetForm: this.resetForm,
               submitForm: this.submitForm,
-              props: this.props,
+              props: this.props
             });
+            return result;
           },
-          (err: any) =>
-            this.setState({ isSubmitting: false, errors: yupToFormErrors(err) })
+          (err: any) => {
+            this.setState({
+              isSubmitting: false,
+              errors: yupToFormErrors(err)
+            });
+          }
         );
-      }
+      };
 
       handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -287,12 +293,12 @@ export function Formik<Props, Values extends FormikValues, Payload>({
           ...state,
           values: {
             ...values as object,
-            [field]: value,
+            [field]: value
           },
           touched: {
             ...touched as object,
-            [field]: true,
-          },
+            [field]: true
+          }
         }));
         // Validate against schema
         validateFormData<Values>(
@@ -301,7 +307,7 @@ export function Formik<Props, Values extends FormikValues, Payload>({
         ).then(
           () => this.setState({ errors: {} }),
           (err: any) => this.setState({ errors: yupToFormErrors(err) })
-          );
+        );
       };
 
       resetForm = (nextProps?: Props) => {
@@ -312,7 +318,7 @@ export function Formik<Props, Values extends FormikValues, Payload>({
           error: undefined,
           values: nextProps
             ? mapPropsToValues(nextProps)
-            : mapPropsToValues(this.props),
+            : mapPropsToValues(this.props)
         });
       };
 
@@ -322,7 +328,7 @@ export function Formik<Props, Values extends FormikValues, Payload>({
           errors: {},
           touched: {},
           error: undefined,
-          values: mapPropsToValues(this.props),
+          values: mapPropsToValues(this.props)
         });
       };
 
